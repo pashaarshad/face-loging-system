@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Face Login System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        .register-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            margin-top: 50px;
+        }
+        
+        .video-container {
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+            background: #000;
+        }
+        
+        #video {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+        }
+        
+        #canvas {
+            display: none;
+        }
+        
+        .btn-custom {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 50px;
+            padding: 12px 30px;
+            color: white;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            color: white;
+        }
+        
+        .form-control {
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+            padding: 12px 20px;
+        }
+        
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .capture-info {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border-radius: 15px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        
+        .step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 10px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .step.active {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .step.completed {
+            background: #28a745;
+            color: white;
+        }
+        
+        .alert {
+            border-radius: 15px;
+            border: none;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-offline { background-color: #dc3545; }
+        .status-online { background-color: #28a745; }
+        .status-loading { background-color: #ffc107; animation: pulse 2s infinite; }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="register-container">
+                    <div class="text-center mb-4">
+                        <h1 class="display-6 fw-bold text-primary">👤 Create Account</h1>
+                        <p class="text-muted">Register with Username, Password & Face</p>
+                    </div>
+                    
+                    <!-- Step Indicator -->
+                    <div class="step-indicator">
+                        <div class="step active" id="step1">1</div>
+                        <div class="step" id="step2">2</div>
+                    </div>
+                    
+                    <div id="alerts"></div>
+                    
+                    <!-- Step 1: Basic Registration -->
+                    <div id="basicRegistration">
+                        <h4 class="text-center mb-4">📝 Step 1: Basic Information</h4>
+                        <form id="registerForm">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="username" required>
+                                <div class="form-text">Choose a unique username</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="password" required>
+                                <div class="form-text">Must be at least 6 characters</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="confirmPassword" class="form-label">Confirm Password</label>
+                                <input type="password" class="form-control" id="confirmPassword" required>
+                            </div>
+                            <button type="submit" class="btn btn-custom w-100">
+                                Continue to Face Setup →
+                            </button>
+                        </form>
+                        
+                        <div class="text-center mt-4">
+                            <p class="text-muted">Already have an account? 
+                                <a href="/" class="text-decoration-none fw-bold">Login here</a>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 2: Face Registration -->
+                    <div id="faceRegistration" style="display: none;">
+                        <h4 class="text-center mb-4">📷 Step 2: Face Registration</h4>
+                        
+                        <div class="capture-info">
+                            <strong>📋 Face Capture Instructions:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Look directly at the camera</li>
+                                <li>Ensure good lighting</li>
+                                <li>Keep your face centered and steady</li>
+                                <li>We'll capture 3 images for better recognition</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="video-container">
+                            <video id="video" autoplay playsinline></video>
+                            <canvas id="canvas"></canvas>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="button" id="startCamera" class="btn btn-secondary">
+                                <span class="status-indicator status-offline"></span>
+                                Start Camera
+                            </button>
+                            <button type="button" id="captureFace" class="btn btn-custom" disabled>
+                                📸 Capture Face (<span id="captureCount">0</span>/3)
+                            </button>
+                            <button type="button" id="completeFaceRegistration" class="btn btn-success" disabled>
+                                ✅ Complete Registration
+                            </button>
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <button type="button" id="skipFace" class="btn btn-outline-secondary">
+                                Skip Face Setup (Login with password only)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let video = document.getElementById('video');
+        let canvas = document.getElementById('canvas');
+        let context = canvas.getContext('2d');
+        let stream = null;
+        let captureCount = 0;
+        let faceCaptures = [];
+        let registeredUserId = null;
+        
+        // Basic registration form
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (!username || !password || !confirmPassword) {
+                showAlert('Please fill in all fields', 'warning');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showAlert('Password must be at least 6 characters', 'warning');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showAlert('Passwords do not match', 'warning');
+                return;
+            }
+            
+            try {
+                const formData = new FormData();
+                formData.append('username', username);
+                formData.append('password', password);
+                
+                const response = await fetch('/register', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    // Registration successful, move to face setup
+                    document.getElementById('step1').classList.add('completed');
+                    document.getElementById('step1').classList.remove('active');
+                    document.getElementById('step2').classList.add('active');
+                    
+                    document.getElementById('basicRegistration').style.display = 'none';
+                    document.getElementById('faceRegistration').style.display = 'block';
+                    
+                    showAlert('Account created successfully! Now set up face recognition.', 'success');
+                    
+                    // Store username for face registration
+                    window.registeredUsername = username;
+                } else {
+                    const text = await response.text();
+                    showAlert('Registration failed. Please try again.', 'danger');
+                }
+            } catch (error) {
+                showAlert('Registration failed: ' + error.message, 'danger');
+            }
+        });
+        
+        // Start camera for face registration
+        document.getElementById('startCamera').addEventListener('click', async function() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480 }
+                });
+                video.srcObject = stream;
+                
+                updateStatus('startCamera', 'online');
+                document.getElementById('captureFace').disabled = false;
+                this.textContent = '📹 Camera Active';
+                
+                showAlert('Camera started successfully!', 'success');
+            } catch (error) {
+                showAlert('Camera access denied: ' + error.message, 'danger');
+                updateStatus('startCamera', 'offline');
+            }
+        });
+        
+        // Capture face
+        document.getElementById('captureFace').addEventListener('click', function() {
+            if (!stream) {
+                showAlert('Please start the camera first', 'warning');
+                return;
+            }
+            
+            // Capture image
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0);
+            
+            // Convert to base64
+            const imageData = canvas.toDataURL('image/jpeg', 0.8);
+            faceCaptures.push(imageData);
+            captureCount++;
+            
+            document.getElementById('captureCount').textContent = captureCount;
+            
+            if (captureCount >= 3) {
+                document.getElementById('captureFace').disabled = true;
+                document.getElementById('completeFaceRegistration').disabled = false;
+                showAlert('All faces captured! Click "Complete Registration" to finish.', 'success');
+            } else {
+                showAlert(`Face ${captureCount} captured! Capture ${3 - captureCount} more.`, 'info');
+            }
+        });
+        
+        // Complete face registration
+        document.getElementById('completeFaceRegistration').addEventListener('click', async function() {
+            if (faceCaptures.length === 0) {
+                showAlert('Please capture at least one face image', 'warning');
+                return;
+            }
+            
+            try {
+                // Log in first to get session
+                const loginResponse = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: window.registeredUsername,
+                        password: document.getElementById('password').value,
+                        type: 'password'
+                    })
+                });
+                
+                if (!loginResponse.ok) {
+                    showAlert('Login failed after registration', 'danger');
+                    return;
+                }
+                
+                // Register face data (using the first capture for simplicity)
+                const faceResponse = await fetch('/register_face', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        face_data: faceCaptures[0]
+                    })
+                });
+                
+                const result = await faceResponse.json();
+                
+                if (result.success) {
+                    showAlert('Face registration completed successfully!', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 2000);
+                } else {
+                    showAlert('Face registration failed: ' + result.message, 'danger');
+                }
+            } catch (error) {
+                showAlert('Face registration failed: ' + error.message, 'danger');
+            }
+        });
+        
+        // Skip face setup
+        document.getElementById('skipFace').addEventListener('click', function() {
+            if (confirm('Are you sure you want to skip face setup? You can only log in with your password.')) {
+                window.location.href = '/';
+            }
+        });
+        
+        function updateStatus(elementId, status) {
+            const element = document.getElementById(elementId);
+            const indicator = element.querySelector('.status-indicator');
+            if (indicator) {
+                indicator.className = `status-indicator status-${status}`;
+            }
+        }
+        
+        function showAlert(message, type) {
+            const alertsContainer = document.getElementById('alerts');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            alertsContainer.appendChild(alert);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+        
+        // Stop camera when page unloads
+        window.addEventListener('beforeunload', function() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        });
+    </script>
+</body>
+</html>
