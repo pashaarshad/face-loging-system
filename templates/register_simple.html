@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Register - SecureFace Demo{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <div class="register-icon mb-3">
+                        <i class="fas fa-user-plus fa-3x"></i>
+                    </div>
+                    <h2 class="fw-bold mb-0">Create Your Account</h2>
+                    <p class="mb-0 opacity-75">Join our secure login system</p>
+                </div>
+                
+                <div class="card-body p-5">
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Demo Mode:</strong> Face recognition setup is disabled. Only username/password authentication is available.
+                    </div>
+
+                    <!-- Personal Information Form -->
+                    <form id="registrationForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="firstName" class="form-label">
+                                    <i class="fas fa-user me-2"></i>First Name
+                                </label>
+                                <input type="text" class="form-control form-control-lg" id="firstName" name="firstName" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="lastName" class="form-label">
+                                    <i class="fas fa-user me-2"></i>Last Name
+                                </label>
+                                <input type="text" class="form-control form-control-lg" id="lastName" name="lastName" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="username" class="form-label">
+                                    <i class="fas fa-at me-2"></i>Username
+                                </label>
+                                <input type="text" class="form-control form-control-lg" id="username" name="username" required>
+                                <div class="form-text">At least 3 characters</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="gender" class="form-label">
+                                    <i class="fas fa-venus-mars me-2"></i>Gender
+                                </label>
+                                <select class="form-select form-select-lg" id="gender" name="gender" required>
+                                    <option value="">Select Gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="password" class="form-label">
+                                <i class="fas fa-lock me-2"></i>Password
+                            </label>
+                            <input type="password" class="form-control form-control-lg" id="password" name="password" required>
+                            <div class="form-text">At least 6 characters</div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success btn-lg w-100">
+                            <i class="fas fa-user-plus me-2"></i>Create Account
+                        </button>
+                    </form>
+
+                    <!-- Loading Spinner -->
+                    <div id="loadingSpinner" class="text-center" style="display: none;">
+                        <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <h5 class="text-muted">Creating Your Account...</h5>
+                        <p class="text-muted">Please wait while we set up your profile</p>
+                    </div>
+
+                    <!-- Status Messages -->
+                    <div id="statusMessage" class="mt-4"></div>
+                </div>
+                
+                <div class="card-footer text-center py-3">
+                    <p class="text-muted mb-0">
+                        Already have an account? 
+                        <a href="{{ url_for('index') }}" class="text-decoration-none">
+                            <i class="fas fa-sign-in-alt me-1"></i>Sign In
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('registrationForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!validateForm()) {
+            return;
+        }
+        
+        const formData = {
+            username: document.getElementById('username').value.trim(),
+            password: document.getElementById('password').value,
+            first_name: document.getElementById('firstName').value.trim(),
+            last_name: document.getElementById('lastName').value.trim(),
+            gender: document.getElementById('gender').value
+        };
+
+        showLoading(true);
+
+        fetch('/complete-registration', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            showLoading(false);
+            if (data.success) {
+                showStatus(data.message, 'success');
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 2000);
+            } else {
+                showStatus(data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            showLoading(false);
+            showStatus('Registration failed. Please try again.', 'danger');
+        });
+    });
+
+    function validateForm() {
+        const firstName = document.getElementById('firstName').value.trim();
+        const lastName = document.getElementById('lastName').value.trim();
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        const gender = document.getElementById('gender').value;
+
+        if (!firstName || !lastName || !username || !password || !gender) {
+            showStatus('Please fill in all required fields.', 'danger');
+            return false;
+        }
+
+        if (username.length < 3) {
+            showStatus('Username must be at least 3 characters long.', 'danger');
+            return false;
+        }
+
+        if (password.length < 6) {
+            showStatus('Password must be at least 6 characters long.', 'danger');
+            return false;
+        }
+
+        return true;
+    }
+
+    function showStatus(message, type) {
+        const statusDiv = document.getElementById('statusMessage');
+        statusDiv.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+    }
+
+    function showLoading(show) {
+        const spinner = document.getElementById('loadingSpinner');
+        const form = document.getElementById('registrationForm');
+        
+        if (show) {
+            spinner.style.display = 'block';
+            form.style.display = 'none';
+        } else {
+            spinner.style.display = 'none';
+            form.style.display = 'block';
+        }
+    }
+});
+</script>
+{% endblock %}

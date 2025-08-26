@@ -1,9 +1,8 @@
-Flask==2.3.3
-opencv-python==4.8.1.78
-face-recognition==1.3.0
-numpy==1.24.3
-Pillow==10.0.1
-Flask-WTF==1.1.1
-WTForms==3.0.1
-python-dotenv==1.0.0
-Werkzeug==2.3.7
+Flask
+opencv-python-headless
+numpy
+Pillow
+Flask-WTF
+WTForms
+python-dotenv
+Werkzeug

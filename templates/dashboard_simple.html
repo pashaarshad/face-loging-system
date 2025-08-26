@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - SecureFace Demo{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Welcome Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-gradient-primary text-white border-0 shadow-lg">
+                <div class="card-body py-5">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="welcome-content">
+                                <h1 class="display-5 fw-bold mb-3">
+                                    <i class="fas fa-tachometer-alt me-3"></i>
+                                    Welcome to Your Dashboard
+                                </h1>
+                                <h2 class="h3 mb-3">
+                                    Hello, <span id="userFullName">{{ session.first_name }} {{ session.last_name }}</span>! 👋
+                                </h2>
+                                <p class="lead mb-0 opacity-75">
+                                    You're successfully logged in to the demo system.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="dashboard-icon">
+                                <i class="fas fa-user-circle fa-5x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Demo Notice -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Demo Mode:</strong> This is a demonstration version. Face recognition features are disabled. 
+                To enable full functionality, install the required packages (opencv-python, face-recognition) and use the complete version.
+            </div>
+        </div>
+    </div>
+
+    <!-- User Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="stat-icon text-primary mb-3">
+                        <i class="fas fa-user fa-2x"></i>
+                    </div>
+                    <h5 class="card-title">Account Status</h5>
+                    <p class="card-text text-success fw-bold">
+                        <i class="fas fa-check-circle me-2"></i>Active
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="stat-icon text-info mb-3">
+                        <i class="fas fa-calendar-alt fa-2x"></i>
+                    </div>
+                    <h5 class="card-title">Member Since</h5>
+                    <p class="card-text" id="memberSince">Loading...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="stat-icon text-warning mb-3">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                    <h5 class="card-title">Last Login</h5>
+                    <p class="card-text" id="lastLogin">Loading...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="stat-icon text-secondary mb-3">
+                        <i class="fas fa-cog fa-2x"></i>
+                    </div>
+                    <h5 class="card-title">Mode</h5>
+                    <p class="card-text text-secondary fw-bold">Demo</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row">
+        <!-- User Profile Card -->
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user-circle me-2 text-primary"></i>
+                        Profile Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="profile-info">
+                        <div class="text-center mb-4">
+                            <div class="profile-avatar">
+                                <i class="fas fa-user-circle fa-5x text-muted"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="profile-details">
+                            <div class="detail-item mb-3">
+                                <label class="text-muted small">Username</label>
+                                <div class="fw-bold" id="username">{{ session.username }}</div>
+                            </div>
+                            
+                            <div class="detail-item mb-3">
+                                <label class="text-muted small">Full Name</label>
+                                <div class="fw-bold" id="fullName">{{ session.first_name }} {{ session.last_name }}</div>
+                            </div>
+                            
+                            <div class="detail-item mb-3">
+                                <label class="text-muted small">Gender</label>
+                                <div class="fw-bold" id="gender">Loading...</div>
+                            </div>
+                            
+                            <div class="detail-item mb-3">
+                                <label class="text-muted small">Face Recognition</label>
+                                <div id="faceRecognitionStatus">
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-times me-1"></i>Disabled (Demo Mode)
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2 text-warning"></i>
+                        Available Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-3">
+                        <button class="btn btn-outline-secondary btn-lg" disabled>
+                            <i class="fas fa-camera me-2"></i>
+                            Face Recognition (Disabled)
+                        </button>
+                        
+                        <button class="btn btn-outline-secondary btn-lg" disabled>
+                            <i class="fas fa-history me-2"></i>
+                            Login History (Coming Soon)
+                        </button>
+                        
+                        <button class="btn btn-outline-secondary btn-lg" disabled>
+                            <i class="fas fa-edit me-2"></i>
+                            Update Profile (Coming Soon)
+                        </button>
+                        
+                        <a href="{{ url_for('logout') }}" class="btn btn-outline-danger btn-lg">
+                            <i class="fas fa-sign-out-alt me-2"></i>
+                            Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Information -->
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2 text-info"></i>
+                        System Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="system-info">
+                        <div class="info-item mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">System Status</span>
+                                <span class="badge bg-success">Online</span>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Mode</span>
+                                <span class="badge bg-warning">Demo</span>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Database</span>
+                                <span class="badge bg-success">Connected</span>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Face Recognition</span>
+                                <span class="badge bg-secondary">Disabled</span>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="mt-4">
+                            <h6 class="text-muted mb-3">Available Features</h6>
+                            <div class="feature-list">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <small>Password Authentication</small>
+                                </div>
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <small>User Registration</small>
+                                </div>
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <small>Secure Sessions</small>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <small>SQLite Database</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-graduation-cap me-2 text-success"></i>
+                        How to Enable Full Features
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>To Enable Face Recognition:</h6>
+                            <ol>
+                                <li>Install Visual Studio Build Tools</li>
+                                <li>Run: <code>pip install opencv-python face-recognition</code></li>
+                                <li>Use <code>app.py</code> instead of <code>app_simple.py</code></li>
+                                <li>Restart the application</li>
+                            </ol>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Current Demo Features:</h6>
+                            <ul>
+                                <li>✅ User registration with personal info</li>
+                                <li>✅ Password-based authentication</li>
+                                <li>✅ Secure session management</li>
+                                <li>✅ Beautiful responsive UI</li>
+                                <li>❌ Face recognition (requires packages)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadUserStats();
+});
+
+function loadUserStats() {
+    fetch('/api/user-stats')
+        .then(response => response.json())
+        .then(data => {
+            if (!data.error) {
+                // Update profile information
+                document.getElementById('gender').textContent = data.gender;
+                
+                // Format and display dates
+                if (data.member_since) {
+                    const memberDate = new Date(data.member_since);
+                    document.getElementById('memberSince').textContent = memberDate.toLocaleDateString();
+                }
+                
+                if (data.last_login) {
+                    const loginDate = new Date(data.last_login);
+                    document.getElementById('lastLogin').textContent = loginDate.toLocaleString();
+                } else {
+                    document.getElementById('lastLogin').textContent = 'First login';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error loading user stats:', error);
+        });
+}
+</script>
+{% endblock %}

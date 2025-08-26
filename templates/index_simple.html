@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Login - SecureFace Demo{% endblock %}
+
+{% block content %}
+<div class="container-fluid vh-100">
+    <div class="row h-100">
+        <!-- Left side - Login Form -->
+        <div class="col-lg-6 d-flex align-items-center justify-content-center bg-light">
+            <div class="login-container">
+                <div class="text-center mb-5">
+                    <div class="login-icon">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <h2 class="fw-bold">Welcome Back</h2>
+                    <p class="text-muted">Sign in to your account</p>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Demo Mode:</strong> Face recognition is disabled. Please use username/password login.
+                    </div>
+                </div>
+
+                <!-- Password Login Form -->
+                <div id="passwordLogin">
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">
+                                <i class="fas fa-user me-2"></i>Username
+                            </label>
+                            <input type="text" class="form-control form-control-lg" id="username" name="username" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="password" class="form-label">
+                                <i class="fas fa-lock me-2"></i>Password
+                            </label>
+                            <input type="password" class="form-control form-control-lg" id="password" name="password" required>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">
+                            <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Loading Spinner -->
+                <div id="loadingSpinner" class="text-center" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Processing...</p>
+                </div>
+
+                <!-- Status Messages -->
+                <div id="statusMessage" class="mt-3"></div>
+
+                <!-- Register Link -->
+                <div class="text-center mt-4">
+                    <p class="text-muted">
+                        Don't have an account? 
+                        <a href="{{ url_for('register') }}" class="text-decoration-none">
+                            <i class="fas fa-user-plus me-1"></i>Create Account
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right side - Feature Showcase -->
+        <div class="col-lg-6 bg-gradient-primary d-flex align-items-center justify-content-center text-white">
+            <div class="feature-showcase text-center">
+                <div class="feature-icon mb-4">
+                    <i class="fas fa-cog fa-5x"></i>
+                </div>
+                <h1 class="display-4 fw-bold mb-4">Demo Mode</h1>
+                <p class="lead mb-4">
+                    This is a demonstration of the login system without face recognition.
+                </p>
+                
+                <div class="features-list">
+                    <div class="feature-item mb-3">
+                        <i class="fas fa-lock me-3"></i>
+                        <span>Secure password authentication</span>
+                    </div>
+                    <div class="feature-item mb-3">
+                        <i class="fas fa-database me-3"></i>
+                        <span>SQLite database storage</span>
+                    </div>
+                    <div class="feature-item mb-3">
+                        <i class="fas fa-user-shield me-3"></i>
+                        <span>Session management</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-mobile-alt me-3"></i>
+                        <span>Responsive design</span>
+                    </div>
+                </div>
+                
+                <div class="mt-5">
+                    <h5>To Enable Face Recognition:</h5>
+                    <ol class="text-start">
+                        <li>Install Visual Studio Build Tools</li>
+                        <li>Run: pip install opencv-python face-recognition</li>
+                        <li>Use the full version of the application</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Password login form
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        
+        if (!username || !password) {
+            showStatus('Please enter both username and password', 'danger');
+            return;
+        }
+        
+        showLoading(true);
+        
+        fetch('/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                username: username,
+                password: password
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            showLoading(false);
+            if (data.success) {
+                showStatus(data.message, 'success');
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 1000);
+            } else {
+                showStatus(data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            showLoading(false);
+            showStatus('Login failed. Please try again.', 'danger');
+        });
+    });
+
+    function showStatus(message, type) {
+        const statusDiv = document.getElementById('statusMessage');
+        statusDiv.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+    }
+
+    function showLoading(show) {
+        const spinner = document.getElementById('loadingSpinner');
+        const loginForm = document.getElementById('loginForm');
+        
+        if (show) {
+            spinner.style.display = 'block';
+            loginForm.style.display = 'none';
+        } else {
+            spinner.style.display = 'none';
+            loginForm.style.display = 'block';
+        }
+    }
+});
+</script>
+{% endblock %}

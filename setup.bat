@@ -6,7 +6,7 @@ echo.
 
 REM Check if Python is installed
 echo [1/6] Checking Python installation...
-python --version >nul 2>&1
+py --version >nul 2>&1
 if %errorlevel% neq 0 (
     echo ERROR: Python is not installed or not in PATH!
     echo.
@@ -23,7 +23,7 @@ echo Python is installed successfully!
 
 REM Check if pip is available
 echo [2/6] Checking pip installation...
-pip --version >nul 2>&1
+py -m pip --version >nul 2>&1
 if %errorlevel% neq 0 (
     echo ERROR: pip is not available!
     echo Please ensure pip is installed with Python
@@ -35,7 +35,7 @@ echo pip is available!
 REM Create virtual environment
 echo [3/6] Creating virtual environment...
 if not exist "face_login_env" (
-    python -m venv face_login_env
+    py -m venv face_login_env
     echo Virtual environment created successfully!
 ) else (
     echo Virtual environment already exists!
@@ -47,12 +47,12 @@ call face_login_env\Scripts\activate
 
 REM Upgrade pip
 echo [5/6] Upgrading pip...
-python -m pip install --upgrade pip
+py -m pip install --upgrade pip
 
 REM Install requirements
 echo [6/6] Installing required packages...
 echo This may take several minutes, please wait...
-pip install -r requirements.txt
+py -m pip install -r requirements.txt
 
 if %errorlevel% neq 0 (
     echo.
