@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+
+{% block title %}Register - SecureFace{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <div class="register-icon mb-3">
+                        <i class="fas fa-user-plus fa-3x"></i>
+                    </div>
+                    <h2 class="fw-bold mb-0">Create Your Account</h2>
+                    <p class="mb-0 opacity-75">Join our secure facial recognition system</p>
+                </div>
+                
+                <div class="card-body p-5">
+                    <!-- Registration Steps -->
+                    <div class="registration-steps mb-5">
+                        <div class="d-flex justify-content-between">
+                            <div class="step active" id="step1">
+                                <div class="step-circle">1</div>
+                                <span>Personal Info</span>
+                            </div>
+                            <div class="step" id="step2">
+                                <div class="step-circle">2</div>
+                                <span>Face Capture</span>
+                            </div>
+                            <div class="step" id="step3">
+                                <div class="step-circle">3</div>
+                                <span>Complete</span>
+                            </div>
+                        </div>
+                        <div class="progress mt-3">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: 33%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Step 1: Personal Information -->
+                    <div id="personalInfoStep">
+                        <h4 class="mb-4">
+                            <i class="fas fa-user me-2 text-primary"></i>
+                            Personal Information
+                        </h4>
+                        
+                        <form id="personalInfoForm">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="firstName" class="form-label">
+                                        <i class="fas fa-user me-2"></i>First Name
+                                    </label>
+                                    <input type="text" class="form-control form-control-lg" id="firstName" name="firstName" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="lastName" class="form-label">
+                                        <i class="fas fa-user me-2"></i>Last Name
+                                    </label>
+                                    <input type="text" class="form-control form-control-lg" id="lastName" name="lastName" required>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="username" class="form-label">
+                                        <i class="fas fa-at me-2"></i>Username
+                                    </label>
+                                    <input type="text" class="form-control form-control-lg" id="username" name="username" required>
+                                    <div class="form-text">At least 3 characters</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="gender" class="form-label">
+                                        <i class="fas fa-venus-mars me-2"></i>Gender
+                                    </label>
+                                    <select class="form-select form-select-lg" id="gender" name="gender" required>
+                                        <option value="">Select Gender</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="password" class="form-label">
+                                    <i class="fas fa-lock me-2"></i>Password
+                                </label>
+                                <input type="password" class="form-control form-control-lg" id="password" name="password" required>
+                                <div class="form-text">At least 6 characters</div>
+                            </div>
+                            
+                            <button type="button" class="btn btn-primary btn-lg" id="nextToFaceCapture">
+                                Next: Face Capture <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Step 2: Face Capture (Hidden initially) -->
+                    <div id="faceCaptureStep" style="display: none;">
+                        <h4 class="mb-4">
+                            <i class="fas fa-camera me-2 text-primary"></i>
+                            Face Recognition Setup
+                        </h4>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            We need to capture your face 3 times for better accuracy. Please ensure good lighting and look directly at the camera.
+                        </div>
+                        
+                        <div class="text-center">
+                            <div class="camera-container mb-4">
+                                <video id="video" autoplay muted style="display: none;" class="rounded"></video>
+                                <canvas id="canvas" style="display: none;"></canvas>
+                                <div id="cameraPlaceholder" class="camera-placeholder-large">
+                                    <i class="fas fa-camera fa-4x text-muted mb-3"></i>
+                                    <h5 class="text-muted">Camera Preview</h5>
+                                    <p class="text-muted">Click "Start Camera" to begin face capture</p>
+                                </div>
+                            </div>
+                            
+                            <div class="capture-controls mb-4">
+                                <button id="startCamera" class="btn btn-success btn-lg me-3">
+                                    <i class="fas fa-video me-2"></i>Start Camera
+                                </button>
+                                
+                                <button id="captureImage" class="btn btn-primary btn-lg" style="display: none;">
+                                    <i class="fas fa-camera me-2"></i>Capture Face (<span id="captureCount">0</span>/3)
+                                </button>
+                            </div>
+                            
+                            <div id="captureProgress" class="mb-4" style="display: none;">
+                                <div class="progress">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                                </div>
+                                <small class="text-muted mt-2 d-block">Face captures completed</small>
+                            </div>
+                            
+                            <div id="faceStatus" class="mb-4"></div>
+                            
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-outline-secondary btn-lg" id="backToPersonalInfo">
+                                    <i class="fas fa-arrow-left me-2"></i>Back
+                                </button>
+                                
+                                <button type="button" class="btn btn-success btn-lg" id="completeRegistration" style="display: none;">
+                                    Complete Registration <i class="fas fa-check ms-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Loading Spinner -->
+                    <div id="loadingSpinner" class="text-center" style="display: none;">
+                        <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <h5 class="text-muted">Processing Registration...</h5>
+                        <p class="text-muted">Please wait while we set up your account</p>
+                    </div>
+
+                    <!-- Status Messages -->
+                    <div id="statusMessage" class="mt-4"></div>
+                </div>
+                
+                <div class="card-footer text-center py-3">
+                    <p class="text-muted mb-0">
+                        Already have an account? 
+                        <a href="{{ url_for('index') }}" class="text-decoration-none">
+                            <i class="fas fa-sign-in-alt me-1"></i>Sign In
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentStep = 1;
+    let captureCount = 0;
+    let video = document.getElementById('video');
+    let canvas = document.getElementById('canvas');
+    let ctx = canvas.getContext('2d');
+    let stream = null;
+
+    // Step navigation
+    document.getElementById('nextToFaceCapture').addEventListener('click', function() {
+        if (validatePersonalInfo()) {
+            goToStep(2);
+        }
+    });
+
+    document.getElementById('backToPersonalInfo').addEventListener('click', function() {
+        stopCamera();
+        goToStep(1);
+    });
+
+    // Camera controls
+    document.getElementById('startCamera').addEventListener('click', function() {
+        startCamera();
+    });
+
+    document.getElementById('captureImage').addEventListener('click', function() {
+        captureImage();
+    });
+
+    document.getElementById('completeRegistration').addEventListener('click', function() {
+        completeRegistration();
+    });
+
+    function validatePersonalInfo() {
+        const firstName = document.getElementById('firstName').value.trim();
+        const lastName = document.getElementById('lastName').value.trim();
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        const gender = document.getElementById('gender').value;
+
+        if (!firstName || !lastName || !username || !password || !gender) {
+            showStatus('Please fill in all required fields.', 'danger');
+            return false;
+        }
+
+        if (username.length < 3) {
+            showStatus('Username must be at least 3 characters long.', 'danger');
+            return false;
+        }
+
+        if (password.length < 6) {
+            showStatus('Password must be at least 6 characters long.', 'danger');
+            return false;
+        }
+
+        return true;
+    }
+
+    function goToStep(step) {
+        // Update step indicators
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+        document.getElementById(`step${step}`).classList.add('active');
+
+        // Update progress bar
+        const progress = (step / 3) * 100;
+        document.querySelector('.progress-bar').style.width = progress + '%';
+
+        // Show/hide step content
+        if (step === 1) {
+            document.getElementById('personalInfoStep').style.display = 'block';
+            document.getElementById('faceCaptureStep').style.display = 'none';
+        } else if (step === 2) {
+            document.getElementById('personalInfoStep').style.display = 'none';
+            document.getElementById('faceCaptureStep').style.display = 'block';
+        }
+
+        currentStep = step;
+    }
+
+    function startCamera() {
+        navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                width: { ideal: 640 },
+                height: { ideal: 480 }
+            } 
+        })
+        .then(function(mediaStream) {
+            stream = mediaStream;
+            video.srcObject = mediaStream;
+            video.style.display = 'block';
+            document.getElementById('cameraPlaceholder').style.display = 'none';
+            document.getElementById('startCamera').style.display = 'none';
+            document.getElementById('captureImage').style.display = 'inline-block';
+            document.getElementById('captureProgress').style.display = 'block';
+            
+            showFaceStatus('Camera started. Position your face and click capture.', 'info');
+        })
+        .catch(function(error) {
+            showFaceStatus('Camera access denied or not available.', 'danger');
+        });
+    }
+
+    function stopCamera() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+            video.style.display = 'none';
+            document.getElementById('cameraPlaceholder').style.display = 'block';
+            document.getElementById('startCamera').style.display = 'inline-block';
+            document.getElementById('captureImage').style.display = 'none';
+        }
+    }
+
+    function captureImage() {
+        // Set canvas dimensions to match video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Draw video frame to canvas
+        ctx.drawImage(video, 0, 0);
+        
+        // Convert to base64
+        const imageData = canvas.toDataURL('image/jpeg');
+        
+        showFaceStatus('Processing face capture...', 'info');
+        
+        fetch('/capture-face', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                image: imageData,
+                capture_count: captureCount + 1
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                captureCount++;
+                document.getElementById('captureCount').textContent = captureCount;
+                
+                // Update progress
+                const progress = (captureCount / 3) * 100;
+                document.querySelector('#captureProgress .progress-bar').style.width = progress + '%';
+                
+                showFaceStatus(data.message, 'success');
+                
+                if (data.completed) {
+                    document.getElementById('captureImage').style.display = 'none';
+                    document.getElementById('completeRegistration').style.display = 'inline-block';
+                    stopCamera();
+                    showFaceStatus('All face captures completed! Click "Complete Registration" to finish.', 'success');
+                }
+            } else {
+                showFaceStatus(data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            showFaceStatus('Face capture failed. Please try again.', 'danger');
+        });
+    }
+
+    function completeRegistration() {
+        const formData = {
+            username: document.getElementById('username').value.trim(),
+            password: document.getElementById('password').value,
+            first_name: document.getElementById('firstName').value.trim(),
+            last_name: document.getElementById('lastName').value.trim(),
+            gender: document.getElementById('gender').value
+        };
+
+        showLoading(true);
+
+        fetch('/complete-registration', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            showLoading(false);
+            if (data.success) {
+                showStatus(data.message, 'success');
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 2000);
+            } else {
+                showStatus(data.message, 'danger');
+                goToStep(1); // Go back to edit personal info if needed
+            }
+        })
+        .catch(error => {
+            showLoading(false);
+            showStatus('Registration failed. Please try again.', 'danger');
+        });
+    }
+
+    function showStatus(message, type) {
+        const statusDiv = document.getElementById('statusMessage');
+        statusDiv.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+    }
+
+    function showFaceStatus(message, type) {
+        const statusDiv = document.getElementById('faceStatus');
+        statusDiv.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+    }
+
+    function showLoading(show) {
+        const spinner = document.getElementById('loadingSpinner');
+        const personalInfo = document.getElementById('personalInfoStep');
+        const faceCapture = document.getElementById('faceCaptureStep');
+        
+        if (show) {
+            spinner.style.display = 'block';
+            personalInfo.style.display = 'none';
+            faceCapture.style.display = 'none';
+        } else {
+            spinner.style.display = 'none';
+            if (currentStep === 1) {
+                personalInfo.style.display = 'block';
+            } else {
+                faceCapture.style.display = 'block';
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

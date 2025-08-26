@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}Face Capture - SecureFace{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <div class="capture-icon mb-3">
+                        <i class="fas fa-camera fa-3x"></i>
+                    </div>
+                    <h2 class="fw-bold mb-0">Face Recognition Setup</h2>
+                    <p class="mb-0 opacity-75">We need to capture your face for secure authentication</p>
+                </div>
+                
+                <div class="card-body p-5">
+                    <div class="text-center">
+                        <div class="alert alert-info mb-4">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Instructions:</strong> Look directly at the camera and ensure good lighting. We'll capture your face 3 times for better accuracy.
+                        </div>
+                        
+                        <div class="camera-container mb-4">
+                            <video id="video" autoplay muted style="display: none;" class="rounded"></video>
+                            <canvas id="canvas" style="display: none;"></canvas>
+                            <div id="cameraPlaceholder" class="camera-placeholder-large">
+                                <i class="fas fa-camera fa-4x text-muted mb-3"></i>
+                                <h5 class="text-muted">Camera Preview</h5>
+                                <p class="text-muted">Click "Start Camera" to begin</p>
+                            </div>
+                        </div>
+                        
+                        <div class="capture-progress mb-4" style="display: none;">
+                            <h6 class="text-muted mb-2">Capture Progress</h6>
+                            <div class="progress">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <small class="text-muted mt-2 d-block">
+                                <span id="captureCount">0</span> of 3 captures completed
+                            </small>
+                        </div>
+                        
+                        <div class="capture-controls mb-4">
+                            <button id="startCamera" class="btn btn-success btn-lg me-3">
+                                <i class="fas fa-video me-2"></i>Start Camera
+                            </button>
+                            
+                            <button id="captureImage" class="btn btn-primary btn-lg" style="display: none;">
+                                <i class="fas fa-camera me-2"></i>Capture Face
+                            </button>
+                            
+                            <button id="retryCapture" class="btn btn-warning btn-lg me-3" style="display: none;">
+                                <i class="fas fa-redo me-2"></i>Retry
+                            </button>
+                            
+                            <button id="completeCapture" class="btn btn-success btn-lg" style="display: none;">
+                                <i class="fas fa-check me-2"></i>Complete Setup
+                            </button>
+                        </div>
+                        
+                        <div id="statusMessage" class="mb-4"></div>
+                        
+                        <div class="captured-faces mt-4" id="capturedFaces" style="display: none;">
+                            <h6 class="text-muted mb-3">Captured Images</h6>
+                            <div class="row" id="facePreviews">
+                                <!-- Face previews will be added here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-footer text-center py-3">
+                    <small class="text-muted">
+                        <i class="fas fa-shield-alt me-1"></i>
+                        Your face data is encrypted and stored securely
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let captureCount = 0;
+    let capturedImages = [];
+    let cameraManager = new CameraManager();
+    
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const startCameraBtn = document.getElementById('startCamera');
+    const captureBtn = document.getElementById('captureImage');
+    const retryBtn = document.getElementById('retryCapture');
+    const completeBtn = document.getElementById('completeCapture');
+    const statusDiv = document.getElementById('statusMessage');
+    const progressDiv = document.querySelector('.capture-progress');
+    const capturedFacesDiv = document.getElementById('capturedFaces');
+    
+    startCameraBtn.addEventListener('click', startCamera);
+    captureBtn.addEventListener('click', captureImage);
+    retryBtn.addEventListener('click', retryLastCapture);
+    completeBtn.addEventListener('click', completeSetup);
+    
+    async function startCamera() {
+        if (!cameraManager.isSupported()) {
+            showStatus('Camera not supported by your browser', 'danger');
+            return;
+        }
+        
+        showStatus('Starting camera...', 'info');
+        
+        const success = await cameraManager.initialize(video, canvas);
+        
+        if (success) {
+            video.style.display = 'block';
+            document.getElementById('cameraPlaceholder').style.display = 'none';
+            startCameraBtn.style.display = 'none';
+            captureBtn.style.display = 'inline-block';
+            progressDiv.style.display = 'block';
+            
+            showStatus('Camera started! Position your face and click capture.', 'success');
+        } else {
+            showStatus('Failed to access camera. Please check permissions.', 'danger');
+        }
+    }
+    
+    function captureImage() {
+        const imageData = cameraManager.captureFrame();
+        
+        if (!imageData) {
+            showStatus('Failed to capture image. Please try again.', 'danger');
+            return;
+        }
+        
+        showStatus('Processing face...', 'info');
+        
+        // Send to server for processing
+        fetch('/capture-face', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                image: imageData,
+                capture_count: captureCount + 1
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                captureCount++;
+                capturedImages.push(imageData);
+                
+                updateProgress();
+                addFacePreview(imageData, captureCount);
+                
+                if (captureCount >= 3) {
+                    captureBtn.style.display = 'none';
+                    completeBtn.style.display = 'inline-block';
+                    cameraManager.stop();
+                    showStatus('All captures completed! Click "Complete Setup" to finish.', 'success');
+                } else {
+                    showStatus(`Face ${captureCount} captured successfully! Capture ${3 - captureCount} more.`, 'success');
+                }
+            } else {
+                showStatus(data.message, 'danger');
+                retryBtn.style.display = 'inline-block';
+            }
+        })
+        .catch(error => {
+            showStatus('Network error. Please try again.', 'danger');
+            retryBtn.style.display = 'inline-block';
+        });
+    }
+    
+    function retryLastCapture() {
+        retryBtn.style.display = 'none';
+        showStatus('Ready for capture. Please try again.', 'info');
+    }
+    
+    function updateProgress() {
+        const progressBar = document.querySelector('.progress-bar');
+        const countSpan = document.getElementById('captureCount');
+        
+        const percentage = (captureCount / 3) * 100;
+        progressBar.style.width = percentage + '%';
+        countSpan.textContent = captureCount;
+    }
+    
+    function addFacePreview(imageData, number) {
+        const previewsDiv = document.getElementById('facePreviews');
+        
+        const col = document.createElement('div');
+        col.className = 'col-4 mb-3';
+        
+        col.innerHTML = `
+            <div class="card border-success">
+                <img src="${imageData}" class="card-img-top" alt="Face ${number}" style="height: 120px; object-fit: cover;">
+                <div class="card-body p-2 text-center">
+                    <small class="text-success">
+                        <i class="fas fa-check-circle me-1"></i>
+                        Face ${number}
+                    </small>
+                </div>
+            </div>
+        `;
+        
+        previewsDiv.appendChild(col);
+        capturedFacesDiv.style.display = 'block';
+    }
+    
+    function completeSetup() {
+        showStatus('Completing face recognition setup...', 'info');
+        
+        // Redirect to complete registration or dashboard
+        setTimeout(() => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const returnUrl = urlParams.get('return') || '/register';
+            window.location.href = returnUrl;
+        }, 1000);
+    }
+    
+    function showStatus(message, type) {
+        statusDiv.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+    }
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function() {
+        cameraManager.stop();
+    });
+});
+</script>
+{% endblock %}

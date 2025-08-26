@@ -1,0 +1,436 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - SecureFace{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Welcome Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-gradient-primary text-white border-0 shadow-lg">
+                <div class="card-body py-5">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="welcome-content">
+                                <h1 class="display-5 fw-bold mb-3">
+                                    <i class="fas fa-tachometer-alt me-3"></i>
+                                    Welcome to Your Dashboard
+                                </h1>
+                                <h2 class="h3 mb-3">
+                                    Hello, <span id="userFullName">{{ session.first_name }} {{ session.last_name }}</span>! 👋
+                                </h2>
+                                <p class="lead mb-0 opacity-75">
+                                    You're successfully logged in to the secure facial recognition system.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="dashboard-icon">
+                                <i class="fas fa-user-circle fa-5x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="stat-icon text-primary mb-3">
+                        <i class="fas fa-user fa-2x"></i>
+                    </div>
+                    <h5 class="card-title">Account Status</h5>
+                    <p class="card-text text-success fw-bold">
+                        <i class="fas fa-check-circle me-2"></i>Active
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="stat-icon text-info mb-3">
+                        <i class="fas fa-calendar-alt fa-2x"></i>
+                    </div>
+                    <h5 class="card-title">Member Since</h5>
+                    <p class="card-text" id="memberSince">Loading...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="stat-icon text-warning mb-3">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                    <h5 class="card-title">Last Login</h5>
+                    <p class="card-text" id="lastLogin">Loading...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="stat-icon text-success mb-3">
+                        <i class="fas fa-shield-alt fa-2x"></i>
+                    </div>
+                    <h5 class="card-title">Security Level</h5>
+                    <p class="card-text text-success fw-bold" id="securityLevel">Loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row">
+        <!-- User Profile Card -->
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user-circle me-2 text-primary"></i>
+                        Profile Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="profile-info">
+                        <div class="text-center mb-4">
+                            <div class="profile-avatar">
+                                <i class="fas fa-user-circle fa-5x text-muted"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="profile-details">
+                            <div class="detail-item mb-3">
+                                <label class="text-muted small">Username</label>
+                                <div class="fw-bold" id="username">{{ session.username }}</div>
+                            </div>
+                            
+                            <div class="detail-item mb-3">
+                                <label class="text-muted small">Full Name</label>
+                                <div class="fw-bold" id="fullName">Loading...</div>
+                            </div>
+                            
+                            <div class="detail-item mb-3">
+                                <label class="text-muted small">Gender</label>
+                                <div class="fw-bold" id="gender">Loading...</div>
+                            </div>
+                            
+                            <div class="detail-item mb-3">
+                                <label class="text-muted small">Face Recognition</label>
+                                <div id="faceRecognitionStatus">
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check me-1"></i>Enabled
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2 text-warning"></i>
+                        Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-3">
+                        <button class="btn btn-outline-primary btn-lg" onclick="testFaceRecognition()">
+                            <i class="fas fa-camera me-2"></i>
+                            Test Face Recognition
+                        </button>
+                        
+                        <button class="btn btn-outline-info btn-lg" onclick="viewLoginHistory()">
+                            <i class="fas fa-history me-2"></i>
+                            Login History
+                        </button>
+                        
+                        <button class="btn btn-outline-secondary btn-lg" onclick="updateProfile()">
+                            <i class="fas fa-edit me-2"></i>
+                            Update Profile
+                        </button>
+                        
+                        <a href="{{ url_for('logout') }}" class="btn btn-outline-danger btn-lg">
+                            <i class="fas fa-sign-out-alt me-2"></i>
+                            Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Information -->
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2 text-info"></i>
+                        System Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="system-info">
+                        <div class="info-item mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">System Status</span>
+                                <span class="badge bg-success">Online</span>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Face Recognition</span>
+                                <span class="badge bg-success">Active</span>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Database</span>
+                                <span class="badge bg-success">Connected</span>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Security Level</span>
+                                <span class="badge bg-warning">High</span>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="mt-4">
+                            <h6 class="text-muted mb-3">Features Enabled</h6>
+                            <div class="feature-list">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <small>Dual Authentication</small>
+                                </div>
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <small>Face Recognition</small>
+                                </div>
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <small>Secure Sessions</small>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <small>Encrypted Database</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line me-2 text-success"></i>
+                        Recent Activity
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="activity-timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-success"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Successful Login</h6>
+                                <p class="text-muted mb-0 small">You logged in using face recognition</p>
+                                <small class="text-muted">Just now</small>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-info"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Profile Access</h6>
+                                <p class="text-muted mb-0 small">Dashboard accessed successfully</p>
+                                <small class="text-muted">Just now</small>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-warning"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Security Check</h6>
+                                <p class="text-muted mb-0 small">All security protocols verified</p>
+                                <small class="text-muted">Just now</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+<div class="modal fade" id="actionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Dynamic content -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadUserStats();
+});
+
+function loadUserStats() {
+    fetch('/api/user-stats')
+        .then(response => response.json())
+        .then(data => {
+            if (!data.error) {
+                // Update profile information
+                document.getElementById('fullName').textContent = data.full_name;
+                document.getElementById('gender').textContent = data.gender;
+                
+                // Format and display dates
+                if (data.member_since) {
+                    const memberDate = new Date(data.member_since);
+                    document.getElementById('memberSince').textContent = memberDate.toLocaleDateString();
+                }
+                
+                if (data.last_login) {
+                    const loginDate = new Date(data.last_login);
+                    document.getElementById('lastLogin').textContent = loginDate.toLocaleString();
+                } else {
+                    document.getElementById('lastLogin').textContent = 'First login';
+                }
+                
+                // Update security level
+                const securityLevel = data.has_face_recognition ? 'High Security' : 'Standard';
+                document.getElementById('securityLevel').textContent = securityLevel;
+                
+                // Update face recognition status
+                const faceStatus = document.getElementById('faceRecognitionStatus');
+                if (data.has_face_recognition) {
+                    faceStatus.innerHTML = '<span class="badge bg-success"><i class="fas fa-check me-1"></i>Enabled</span>';
+                } else {
+                    faceStatus.innerHTML = '<span class="badge bg-warning"><i class="fas fa-exclamation-triangle me-1"></i>Not Set</span>';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error loading user stats:', error);
+        });
+}
+
+function testFaceRecognition() {
+    showModal('Test Face Recognition', `
+        <div class="text-center">
+            <i class="fas fa-camera fa-3x text-primary mb-3"></i>
+            <h5>Face Recognition Test</h5>
+            <p class="text-muted">This feature allows you to test your face recognition setup.</p>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Feature coming soon! Your face recognition is already working for login.
+            </div>
+        </div>
+    `);
+}
+
+function viewLoginHistory() {
+    showModal('Login History', `
+        <div class="text-center">
+            <i class="fas fa-history fa-3x text-info mb-3"></i>
+            <h5>Login History</h5>
+            <p class="text-muted">View your recent login activities and security events.</p>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Detailed login history feature coming soon!
+            </div>
+            <div class="list-group text-start">
+                <div class="list-group-item">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">Face Recognition Login</h6>
+                        <small>Just now</small>
+                    </div>
+                    <p class="mb-1">Successful login via facial recognition</p>
+                    <small class="text-success">✓ Successful</small>
+                </div>
+            </div>
+        </div>
+    `);
+}
+
+function updateProfile() {
+    showModal('Update Profile', `
+        <div class="text-center">
+            <i class="fas fa-edit fa-3x text-secondary mb-3"></i>
+            <h5>Update Profile</h5>
+            <p class="text-muted">Modify your account information and security settings.</p>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Profile update feature coming soon!
+            </div>
+            <p class="text-muted">Current features available:</p>
+            <ul class="list-unstyled">
+                <li>✓ View profile information</li>
+                <li>✓ Face recognition login</li>
+                <li>✓ Secure logout</li>
+            </ul>
+        </div>
+    `);
+}
+
+function showModal(title, content) {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalBody').innerHTML = content;
+    const modal = new bootstrap.Modal(document.getElementById('actionModal'));
+    modal.show();
+}
+
+// Real-time clock
+function updateClock() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString();
+    const clockElement = document.getElementById('currentTime');
+    if (clockElement) {
+        clockElement.textContent = timeString;
+    }
+}
+
+// Update clock every second
+setInterval(updateClock, 1000);
+
+// Welcome animation
+setTimeout(() => {
+    document.querySelector('.welcome-content').classList.add('animate__animated', 'animate__fadeInUp');
+}, 100);
+</script>
+{% endblock %}

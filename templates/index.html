@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+
+{% block title %}Login - SecureFace{% endblock %}
+
+{% block content %}
+<div class="container-fluid vh-100">
+    <div class="row h-100">
+        <!-- Left side - Login Form -->
+        <div class="col-lg-6 d-flex align-items-center justify-content-center bg-light">
+            <div class="login-container">
+                <div class="text-center mb-5">
+                    <div class="login-icon">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <h2 class="fw-bold">Welcome Back</h2>
+                    <p class="text-muted">Sign in to your account using password or face recognition</p>
+                </div>
+
+                <!-- Login Method Toggle -->
+                <div class="login-methods mb-4">
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="loginMethod" id="passwordMethod" checked>
+                        <label class="btn btn-outline-primary" for="passwordMethod">
+                            <i class="fas fa-key me-2"></i>Password
+                        </label>
+
+                        <input type="radio" class="btn-check" name="loginMethod" id="faceMethod">
+                        <label class="btn btn-outline-primary" for="faceMethod">
+                            <i class="fas fa-camera me-2"></i>Face Recognition
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Password Login Form -->
+                <div id="passwordLogin">
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">
+                                <i class="fas fa-user me-2"></i>Username
+                            </label>
+                            <input type="text" class="form-control form-control-lg" id="username" name="username" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="password" class="form-label">
+                                <i class="fas fa-lock me-2"></i>Password
+                            </label>
+                            <input type="password" class="form-control form-control-lg" id="password" name="password" required>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">
+                            <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Face Recognition Login -->
+                <div id="faceLogin" style="display: none;">
+                    <div class="text-center">
+                        <div class="camera-container mb-3">
+                            <video id="video" autoplay muted style="display: none;"></video>
+                            <canvas id="canvas" style="display: none;"></canvas>
+                            <div id="cameraPlaceholder" class="camera-placeholder">
+                                <i class="fas fa-camera fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">Click "Start Camera" to begin face recognition</p>
+                            </div>
+                        </div>
+                        
+                        <button id="startCamera" class="btn btn-success btn-lg mb-3">
+                            <i class="fas fa-video me-2"></i>Start Camera
+                        </button>
+                        
+                        <button id="captureImage" class="btn btn-primary btn-lg" style="display: none;">
+                            <i class="fas fa-camera me-2"></i>Capture & Login
+                        </button>
+                        
+                        <div id="faceLoginStatus" class="mt-3"></div>
+                    </div>
+                </div>
+
+                <!-- Loading Spinner -->
+                <div id="loadingSpinner" class="text-center" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Processing...</p>
+                </div>
+
+                <!-- Status Messages -->
+                <div id="statusMessage" class="mt-3"></div>
+
+                <!-- Register Link -->
+                <div class="text-center mt-4">
+                    <p class="text-muted">
+                        Don't have an account? 
+                        <a href="{{ url_for('register') }}" class="text-decoration-none">
+                            <i class="fas fa-user-plus me-1"></i>Create Account
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right side - Feature Showcase -->
+        <div class="col-lg-6 bg-gradient-primary d-flex align-items-center justify-content-center text-white">
+            <div class="feature-showcase text-center">
+                <div class="feature-icon mb-4">
+                    <i class="fas fa-shield-alt fa-5x"></i>
+                </div>
+                <h1 class="display-4 fw-bold mb-4">Secure. Smart. Simple.</h1>
+                <p class="lead mb-4">
+                    Experience the future of authentication with our advanced facial recognition system.
+                </p>
+                
+                <div class="features-list">
+                    <div class="feature-item mb-3">
+                        <i class="fas fa-lock me-3"></i>
+                        <span>Military-grade security</span>
+                    </div>
+                    <div class="feature-item mb-3">
+                        <i class="fas fa-bolt me-3"></i>
+                        <span>Lightning-fast recognition</span>
+                    </div>
+                    <div class="feature-item mb-3">
+                        <i class="fas fa-user-shield me-3"></i>
+                        <span>Privacy protection</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-mobile-alt me-3"></i>
+                        <span>Multi-device support</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Login method toggle
+    const passwordMethod = document.getElementById('passwordMethod');
+    const faceMethod = document.getElementById('faceMethod');
+    const passwordLogin = document.getElementById('passwordLogin');
+    const faceLogin = document.getElementById('faceLogin');
+
+    passwordMethod.addEventListener('change', function() {
+        if (this.checked) {
+            passwordLogin.style.display = 'block';
+            faceLogin.style.display = 'none';
+            stopCamera();
+        }
+    });
+
+    faceMethod.addEventListener('change', function() {
+        if (this.checked) {
+            passwordLogin.style.display = 'none';
+            faceLogin.style.display = 'block';
+        }
+    });
+
+    // Password login form
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        
+        if (!username || !password) {
+            showStatus('Please enter both username and password', 'danger');
+            return;
+        }
+        
+        showLoading(true);
+        
+        fetch('/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                username: username,
+                password: password
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            showLoading(false);
+            if (data.success) {
+                showStatus(data.message, 'success');
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 1000);
+            } else {
+                showStatus(data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            showLoading(false);
+            showStatus('Login failed. Please try again.', 'danger');
+        });
+    });
+
+    // Face recognition variables
+    let video = document.getElementById('video');
+    let canvas = document.getElementById('canvas');
+    let ctx = canvas.getContext('2d');
+    let stream = null;
+
+    // Start camera
+    document.getElementById('startCamera').addEventListener('click', function() {
+        startCamera();
+    });
+
+    // Capture image
+    document.getElementById('captureImage').addEventListener('click', function() {
+        captureAndLogin();
+    });
+
+    function startCamera() {
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function(mediaStream) {
+                stream = mediaStream;
+                video.srcObject = mediaStream;
+                video.style.display = 'block';
+                document.getElementById('cameraPlaceholder').style.display = 'none';
+                document.getElementById('startCamera').style.display = 'none';
+                document.getElementById('captureImage').style.display = 'inline-block';
+                
+                showFaceStatus('Camera started. Position your face and click capture.', 'info');
+            })
+            .catch(function(error) {
+                showFaceStatus('Camera access denied or not available.', 'danger');
+            });
+    }
+
+    function stopCamera() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+            video.style.display = 'none';
+            document.getElementById('cameraPlaceholder').style.display = 'block';
+            document.getElementById('startCamera').style.display = 'inline-block';
+            document.getElementById('captureImage').style.display = 'none';
+        }
+    }
+
+    function captureAndLogin() {
+        // Set canvas dimensions to match video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Draw video frame to canvas
+        ctx.drawImage(video, 0, 0);
+        
+        // Convert to base64
+        const imageData = canvas.toDataURL('image/jpeg');
+        
+        showLoading(true);
+        showFaceStatus('Processing face recognition...', 'info');
+        
+        fetch('/face-login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                image: imageData
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            showLoading(false);
+            if (data.success) {
+                showFaceStatus(data.message, 'success');
+                stopCamera();
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 1000);
+            } else {
+                showFaceStatus(data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            showLoading(false);
+            showFaceStatus('Face recognition failed. Please try again.', 'danger');
+        });
+    }
+
+    function showStatus(message, type) {
+        const statusDiv = document.getElementById('statusMessage');
+        statusDiv.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+    }
+
+    function showFaceStatus(message, type) {
+        const statusDiv = document.getElementById('faceLoginStatus');
+        statusDiv.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+    }
+
+    function showLoading(show) {
+        const spinner = document.getElementById('loadingSpinner');
+        const loginForm = document.getElementById('loginForm');
+        const faceLogin = document.getElementById('faceLogin');
+        
+        if (show) {
+            spinner.style.display = 'block';
+            loginForm.style.display = 'none';
+            faceLogin.style.display = 'none';
+        } else {
+            spinner.style.display = 'none';
+            if (passwordMethod.checked) {
+                loginForm.style.display = 'block';
+            } else {
+                faceLogin.style.display = 'block';
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
