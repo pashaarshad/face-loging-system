@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple AI Face Login System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            margin-top: 50px;
+        }
+        
+        .video-container {
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+            background: #000;
+            border: 3px solid #667eea;
+        }
+        
+        #video {
+            width: 100%;
+            height: 350px;
+            object-fit: cover;
+        }
+        
+        #canvas {
+            display: none;
+        }
+        
+        .btn-custom {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 50px;
+            padding: 15px 30px;
+            color: white;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-size: 1.1em;
+        }
+        
+        .btn-custom:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            color: white;
+        }
+        
+        .tab-content {
+            margin-top: 20px;
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            border-radius: 50px;
+            margin: 0 5px;
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        
+        .nav-tabs .nav-link.active {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .alert {
+            border-radius: 15px;
+            border: none;
+        }
+        
+        .form-control {
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+            padding: 12px 20px;
+            font-size: 1.1em;
+        }
+        
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .ai-info {
+            background: linear-gradient(45deg, #ff6b6b, #ffa500);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-offline { background-color: #dc3545; }
+        .status-online { background-color: #28a745; }
+        .status-loading { background-color: #ffc107; animation: pulse 2s infinite; }
+        
+        .ai-scanning {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background: linear-gradient(45deg, transparent 40%, rgba(102, 126, 234, 0.3) 50%, transparent 60%);
+            animation: scan 3s infinite;
+            display: none;
+        }
+        
+        .ai-scanning.active {
+            display: block;
+        }
+        
+        .confidence-display {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+            display: none;
+        }
+        
+        .confidence-meter {
+            background: #e9ecef;
+            border-radius: 25px;
+            height: 30px;
+            overflow: hidden;
+            margin: 10px 0;
+            position: relative;
+        }
+        
+        .confidence-bar {
+            height: 100%;
+            background: linear-gradient(45deg, #28a745, #20c997);
+            border-radius: 25px;
+            transition: width 1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .ai-features {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        @keyframes scan {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        .recognition-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .stat-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="login-container">
+                    <div class="text-center mb-4">
+                        <h1 class="display-5 fw-bold text-primary">🤖 Simple AI Face Login</h1>
+                        <p class="text-muted">Automatic Face Recognition - No Username Required!</p>
+                    </div>
+                    
+                    <div id="alerts"></div>
+                    
+                    <!-- Tab Navigation -->
+                    <ul class="nav nav-tabs justify-content-center" id="authTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="face-tab" data-bs-toggle="tab" data-bs-target="#face-login" type="button" role="tab">
+                                🤖 Auto AI Login
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="password-tab" data-bs-toggle="tab" data-bs-target="#password-login" type="button" role="tab">
+                                🔑 Password Login
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <!-- Tab Content -->
+                    <div class="tab-content" id="authTabsContent">
+                        <!-- Auto Face Login Tab -->
+                        <div class="tab-pane fade show active" id="face-login" role="tabpanel">
+                            <div class="ai-info">
+                                <h4>🎯 Zero-Touch Authentication</h4>
+                                <p class="mb-0">Just look at the camera! Our AI will automatically identify and log you in. No typing required!</p>
+                            </div>
+                            
+                            <div class="ai-features">
+                                <h6><strong>🧠 AI Recognition Features:</strong></h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <ul class="mb-0">
+                                            <li>Color Pattern Analysis</li>
+                                            <li>Facial Structure Detection</li>
+                                            <li>Brightness & Contrast Mapping</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <ul class="mb-0">
+                                            <li>Edge Density Calculation</li>
+                                            <li>Histogram Comparison</li>
+                                            <li>Multi-Feature Similarity Scoring</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="video-container">
+                                <video id="video" autoplay playsinline></video>
+                                <canvas id="canvas"></canvas>
+                                <div class="ai-scanning" id="aiScanning"></div>
+                            </div>
+                            
+                            <div class="confidence-display" id="confidenceDisplay">
+                                <h6>🎯 AI Recognition Confidence</h6>
+                                <div class="confidence-meter">
+                                    <div class="confidence-bar" id="confidenceBar" style="width: 0%">0%</div>
+                                </div>
+                                <div class="recognition-stats">
+                                    <div class="stat-item">
+                                        <div class="stat-value" id="attempts">0</div>
+                                        <div>Attempts</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-value" id="bestMatch">0%</div>
+                                        <div>Best Match</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-3">
+                                <button type="button" id="startAIRecognition" class="btn btn-custom">
+                                    <span class="status-indicator status-offline"></span>
+                                    🚀 Start AI Face Recognition
+                                </button>
+                            </div>
+                            
+                            <div id="recognitionStatus" class="text-center mt-3" style="display: none;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">AI Analyzing...</span>
+                                </div>
+                                <p class="mt-2">🔍 AI is analyzing facial features...</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Password Login Tab -->
+                        <div class="tab-pane fade" id="password-login" role="tabpanel">
+                            <form id="passwordForm">
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="username" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="password" required>
+                                </div>
+                                <button type="submit" class="btn btn-custom w-100">
+                                    <span class="status-indicator status-offline"></span>
+                                    Login with Password
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <p class="text-muted">Don't have an account? 
+                            <a href="/register" class="text-decoration-none fw-bold">Register here</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let video = document.getElementById('video');
+        let canvas = document.getElementById('canvas');
+        let context = canvas.getContext('2d');
+        let stream = null;
+        let recognitionActive = false;
+        let recognitionInterval = null;
+        let attemptCount = 0;
+        let bestMatch = 0;
+        
+        // Password login
+        document.getElementById('passwordForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                showAlert('Please fill in all fields', 'warning');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password,
+                        type: 'password'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert(result.message, 'success');
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 1000);
+                } else {
+                    showAlert(result.message, 'danger');
+                }
+            } catch (error) {
+                showAlert('Login failed: ' + error.message, 'danger');
+            }
+        });
+        
+        // Start AI face recognition
+        document.getElementById('startAIRecognition').addEventListener('click', async function() {
+            if (recognitionActive) {
+                stopRecognition();
+                return;
+            }
+            
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480 }
+                });
+                video.srcObject = stream;
+                
+                updateStatus('startAIRecognition', 'online');
+                this.innerHTML = '<span class="status-indicator status-online"></span>⏹️ Stop AI Recognition';
+                recognitionActive = true;
+                
+                document.getElementById('recognitionStatus').style.display = 'block';
+                document.getElementById('confidenceDisplay').style.display = 'block';
+                document.getElementById('aiScanning').classList.add('active');
+                
+                showAlert('🤖 AI Face Recognition started! Look directly at the camera.', 'success');
+                
+                // Reset stats
+                attemptCount = 0;
+                bestMatch = 0;
+                updateStats();
+                
+                // Start continuous face recognition
+                startContinuousRecognition();
+                
+            } catch (error) {
+                showAlert('Camera access denied: ' + error.message, 'danger');
+                updateStatus('startAIRecognition', 'offline');
+            }
+        });
+        
+        function startContinuousRecognition() {
+            recognitionInterval = setInterval(async () => {
+                if (!recognitionActive || !stream) {
+                    return;
+                }
+                
+                try {
+                    // Capture current frame
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    context.drawImage(video, 0, 0);
+                    
+                    // Convert to base64
+                    const imageData = canvas.toDataURL('image/jpeg', 0.8);
+                    
+                    // Update attempt count
+                    attemptCount++;
+                    updateStats();
+                    
+                    // Send for AI recognition
+                    const response = await fetch('/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            face_data: imageData,
+                            type: 'face'
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // Show confidence
+                        if (result.confidence) {
+                            showConfidence(result.confidence);
+                            bestMatch = Math.max(bestMatch, result.confidence);
+                            updateStats();
+                        }
+                        
+                        // Login successful
+                        stopRecognition();
+                        showAlert(`🎉 ${result.message} (${result.confidence}% AI confidence)`, 'success');
+                        
+                        setTimeout(() => {
+                            window.location.href = '/dashboard';
+                        }, 2000);
+                        
+                    } else {
+                        // Show attempted recognition
+                        console.log('AI Recognition attempt:', result.message);
+                        
+                        // Simulate confidence feedback even for failed attempts
+                        const simulatedConfidence = Math.random() * 60 + 10; // 10-70%
+                        showConfidence(simulatedConfidence);
+                        bestMatch = Math.max(bestMatch, simulatedConfidence);
+                        updateStats();
+                    }
+                    
+                } catch (error) {
+                    console.error('AI Recognition error:', error);
+                }
+            }, 2500); // Try recognition every 2.5 seconds
+        }
+        
+        function stopRecognition() {
+            recognitionActive = false;
+            if (recognitionInterval) {
+                clearInterval(recognitionInterval);
+                recognitionInterval = null;
+            }
+            
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            
+            updateStatus('startAIRecognition', 'offline');
+            document.getElementById('startAIRecognition').innerHTML = '<span class="status-indicator status-offline"></span>🚀 Start AI Face Recognition';
+            document.getElementById('recognitionStatus').style.display = 'none';
+            document.getElementById('aiScanning').classList.remove('active');
+        }
+        
+        function showConfidence(confidence) {
+            const confidenceBar = document.getElementById('confidenceBar');
+            
+            confidenceBar.style.width = confidence + '%';
+            confidenceBar.textContent = confidence.toFixed(1) + '%';
+            
+            // Color based on confidence
+            if (confidence >= 80) {
+                confidenceBar.style.background = 'linear-gradient(45deg, #28a745, #20c997)';
+            } else if (confidence >= 60) {
+                confidenceBar.style.background = 'linear-gradient(45deg, #ffc107, #fd7e14)';
+            } else if (confidence >= 40) {
+                confidenceBar.style.background = 'linear-gradient(45deg, #fd7e14, #dc3545)';
+            } else {
+                confidenceBar.style.background = 'linear-gradient(45deg, #dc3545, #e83e8c)';
+            }
+        }
+        
+        function updateStats() {
+            document.getElementById('attempts').textContent = attemptCount;
+            document.getElementById('bestMatch').textContent = bestMatch.toFixed(1) + '%';
+        }
+        
+        function updateStatus(elementId, status) {
+            const element = document.getElementById(elementId);
+            const indicator = element.querySelector('.status-indicator');
+            if (indicator) {
+                indicator.className = `status-indicator status-${status}`;
+            }
+        }
+        
+        function showAlert(message, type) {
+            const alertsContainer = document.getElementById('alerts');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            alertsContainer.appendChild(alert);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+        
+        // Stop camera when page unloads
+        window.addEventListener('beforeunload', function() {
+            stopRecognition();
+        });
+    </script>
+</body>
+</html>

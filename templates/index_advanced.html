@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Face Login System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            margin-top: 50px;
+        }
+        
+        .video-container {
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+            background: #000;
+        }
+        
+        #video {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+        }
+        
+        #canvas {
+            display: none;
+        }
+        
+        .btn-custom {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 50px;
+            padding: 12px 30px;
+            color: white;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            color: white;
+        }
+        
+        .tab-content {
+            margin-top: 20px;
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            border-radius: 50px;
+            margin: 0 5px;
+            background: #f8f9fa;
+        }
+        
+        .nav-tabs .nav-link.active {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .alert {
+            border-radius: 15px;
+            border: none;
+        }
+        
+        .form-control {
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+            padding: 12px 20px;
+        }
+        
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .capture-info {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border-radius: 15px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-offline { background-color: #dc3545; }
+        .status-online { background-color: #28a745; }
+        .status-loading { background-color: #ffc107; animation: pulse 2s infinite; }
+        
+        .confidence-meter {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .confidence-bar {
+            height: 100%;
+            background: linear-gradient(45deg, #28a745, #20c997);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+        
+        .auto-login-section {
+            background: linear-gradient(45deg, #ff6b6b, #ffa500);
+            color: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .face-detection-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .face-box {
+            position: absolute;
+            border: 3px solid #28a745;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        @keyframes scan {
+            0% { opacity: 0; transform: translateY(-100%); }
+            50% { opacity: 1; }
+            100% { opacity: 0; transform: translateY(100%); }
+        }
+        
+        .scanning-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            animation: scan 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="login-container">
+                    <div class="text-center mb-4">
+                        <h1 class="display-6 fw-bold text-primary">🤖 AI Face Login System</h1>
+                        <p class="text-muted">Advanced Authentication with Automatic Face Detection</p>
+                    </div>
+                    
+                    <div id="alerts"></div>
+                    
+                    <!-- Tab Navigation -->
+                    <ul class="nav nav-tabs justify-content-center" id="authTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="face-tab" data-bs-toggle="tab" data-bs-target="#face-login" type="button" role="tab">
+                                🤖 Auto Face Login
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="password-tab" data-bs-toggle="tab" data-bs-target="#password-login" type="button" role="tab">
+                                🔑 Password Login
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <!-- Tab Content -->
+                    <div class="tab-content" id="authTabsContent">
+                        <!-- Auto Face Login Tab -->
+                        <div class="tab-pane fade show active" id="face-login" role="tabpanel">
+                            <div class="auto-login-section">
+                                <h4>🎯 Automatic Face Recognition</h4>
+                                <p class="mb-0">No username required! Just look at the camera and our AI will recognize you automatically.</p>
+                            </div>
+                            
+                            <div class="capture-info">
+                                <strong>📋 AI Recognition Instructions:</strong>
+                                <ul class="mb-0 mt-2">
+                                    <li>Look directly at the camera</li>
+                                    <li>Ensure good lighting</li>
+                                    <li>Keep your face centered and steady</li>
+                                    <li>The system will automatically detect and recognize your face</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="video-container">
+                                <video id="video" autoplay playsinline></video>
+                                <canvas id="canvas"></canvas>
+                                <div class="face-detection-overlay" id="faceOverlay">
+                                    <div class="scanning-line"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="button" id="startAutoLogin" class="btn btn-custom">
+                                    <span class="status-indicator status-offline"></span>
+                                    🚀 Start AI Face Recognition
+                                </button>
+                                <div id="recognitionStatus" class="text-center mt-3" style="display: none;">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Analyzing...</span>
+                                    </div>
+                                    <p class="mt-2">🔍 Analyzing your face...</p>
+                                </div>
+                                <div id="confidenceDisplay" style="display: none;">
+                                    <p class="text-center mb-1">Recognition Confidence</p>
+                                    <div class="confidence-meter">
+                                        <div class="confidence-bar" id="confidenceBar" style="width: 0%"></div>
+                                    </div>
+                                    <p class="text-center" id="confidenceText">0%</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Password Login Tab -->
+                        <div class="tab-pane fade" id="password-login" role="tabpanel">
+                            <form id="passwordForm">
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="username" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="password" required>
+                                </div>
+                                <button type="submit" class="btn btn-custom w-100">
+                                    <span class="status-indicator status-offline"></span>
+                                    Login with Password
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <p class="text-muted">Don't have an account? 
+                            <a href="/register" class="text-decoration-none fw-bold">Register here</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let video = document.getElementById('video');
+        let canvas = document.getElementById('canvas');
+        let context = canvas.getContext('2d');
+        let stream = null;
+        let recognitionActive = false;
+        let recognitionInterval = null;
+        
+        // Password login
+        document.getElementById('passwordForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                showAlert('Please fill in all fields', 'warning');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password,
+                        type: 'password'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert(result.message, 'success');
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 1000);
+                } else {
+                    showAlert(result.message, 'danger');
+                }
+            } catch (error) {
+                showAlert('Login failed: ' + error.message, 'danger');
+            }
+        });
+        
+        // Start auto face recognition
+        document.getElementById('startAutoLogin').addEventListener('click', async function() {
+            if (recognitionActive) {
+                stopRecognition();
+                return;
+            }
+            
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480 }
+                });
+                video.srcObject = stream;
+                
+                updateStatus('startAutoLogin', 'online');
+                this.textContent = '⏹️ Stop Recognition';
+                recognitionActive = true;
+                
+                document.getElementById('recognitionStatus').style.display = 'block';
+                
+                showAlert('AI Face Recognition started! Look at the camera.', 'success');
+                
+                // Start continuous face recognition
+                startContinuousRecognition();
+                
+            } catch (error) {
+                showAlert('Camera access denied: ' + error.message, 'danger');
+                updateStatus('startAutoLogin', 'offline');
+            }
+        });
+        
+        function startContinuousRecognition() {
+            recognitionInterval = setInterval(async () => {
+                if (!recognitionActive || !stream) {
+                    return;
+                }
+                
+                try {
+                    // Capture current frame
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    context.drawImage(video, 0, 0);
+                    
+                    // Convert to base64
+                    const imageData = canvas.toDataURL('image/jpeg', 0.8);
+                    
+                    // Send for recognition
+                    const response = await fetch('/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            face_data: imageData,
+                            type: 'face'
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // Show confidence
+                        if (result.confidence) {
+                            showConfidence(result.confidence);
+                        }
+                        
+                        // Login successful
+                        stopRecognition();
+                        showAlert(`${result.message} (${result.confidence}% confidence)`, 'success');
+                        
+                        setTimeout(() => {
+                            window.location.href = '/dashboard';
+                        }, 2000);
+                        
+                    } else {
+                        // Continue trying if no face recognized
+                        console.log('Recognition attempt:', result.message);
+                    }
+                    
+                } catch (error) {
+                    console.error('Recognition error:', error);
+                }
+            }, 2000); // Try recognition every 2 seconds
+        }
+        
+        function stopRecognition() {
+            recognitionActive = false;
+            if (recognitionInterval) {
+                clearInterval(recognitionInterval);
+                recognitionInterval = null;
+            }
+            
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            
+            updateStatus('startAutoLogin', 'offline');
+            document.getElementById('startAutoLogin').textContent = '🚀 Start AI Face Recognition';
+            document.getElementById('recognitionStatus').style.display = 'none';
+            document.getElementById('confidenceDisplay').style.display = 'none';
+        }
+        
+        function showConfidence(confidence) {
+            const confidenceDisplay = document.getElementById('confidenceDisplay');
+            const confidenceBar = document.getElementById('confidenceBar');
+            const confidenceText = document.getElementById('confidenceText');
+            
+            confidenceDisplay.style.display = 'block';
+            confidenceBar.style.width = confidence + '%';
+            confidenceText.textContent = confidence + '%';
+            
+            // Color based on confidence
+            if (confidence >= 80) {
+                confidenceBar.style.background = 'linear-gradient(45deg, #28a745, #20c997)';
+            } else if (confidence >= 60) {
+                confidenceBar.style.background = 'linear-gradient(45deg, #ffc107, #fd7e14)';
+            } else {
+                confidenceBar.style.background = 'linear-gradient(45deg, #dc3545, #e83e8c)';
+            }
+        }
+        
+        function updateStatus(elementId, status) {
+            const element = document.getElementById(elementId);
+            const indicator = element.querySelector('.status-indicator');
+            if (indicator) {
+                indicator.className = `status-indicator status-${status}`;
+            }
+        }
+        
+        function showAlert(message, type) {
+            const alertsContainer = document.getElementById('alerts');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            alertsContainer.appendChild(alert);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+        
+        // Stop camera when page unloads
+        window.addEventListener('beforeunload', function() {
+            stopRecognition();
+        });
+    </script>
+</body>
+</html>
